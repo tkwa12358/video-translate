@@ -1,0 +1,15 @@
+
+class DownloadResolutionEnum(Enum):
+    """下载分辨率"""
+    P360 = "360p"
+    P480 = "480p"
+    P720 = "720p"
+    P1080 = "1080p"
+    P4K = "4k"
+
+class SubtitleDownloadTypeEnum(Enum):
+    """字幕下载类型"""
+    OFFICIAL_ONLY = "仅官方字幕"
+    OFFICIAL_PREFERRED = "优先官方字幕"
+    NONE = "不下载字幕"
+    AUTO = "自动(含机器生成)"
