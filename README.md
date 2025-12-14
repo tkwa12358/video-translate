@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="./resource/assets/logo.png" alt="down-video-load Logo" width="100">
   <h1>down-video-load</h1>
   <p>一款基于大语言模型(LLM)的视频下载与字幕处理工具，支持视频下载、语音识别、字幕智能断句与翻译</p>
 
@@ -24,12 +23,6 @@
 - **清晰度选择**：360p 至 4K 分辨率自由选择。
 - **官方字幕优先**：自动抓取视频自带的官方字幕，无官方字幕时才进行转录。
 - **极简模型管理**：专注于 Large-v2 模型，拒绝选择困难症。
-
-## 界面预览
-
-<div align="center">
-  <img src="https://h1.appinn.me/file/1731487405884_main.png" alt="软件界面预览" width="90%" style="border-radius: 5px;">
-</div>
 
 ## 快速开始
 
