@@ -58,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: down-video-load-macos-dmg
-          path: dist/down-video-load.dmg
+          path: dist/*.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: down-video-load-windows-zip
-          path: dist/down-video-load-windows.zip
+          path: dist/*.zip
 
   release:
     needs: [build-macos, build-windows]
