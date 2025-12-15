@@ -25,6 +25,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pillow
+          
+          # Download Small Model
+          mkdir -p resource/models/faster-whisper-small
+          cd resource/models/faster-whisper-small
+          curl -L -o config.json https://huggingface.co/Systran/faster-whisper-small/resolve/main/config.json
+          curl -L -o model.bin https://huggingface.co/Systran/faster-whisper-small/resolve/main/model.bin
+          curl -L -o vocabulary.txt https://huggingface.co/Systran/faster-whisper-small/resolve/main/vocabulary.txt
+          cd ../../..
 
       - name: Install create-dmg
         run: brew install create-dmg
@@ -78,6 +86,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pillow
+
+      - name: Download Small Model
+        shell: bash
+        run: |
+          mkdir -p resource/models/faster-whisper-small
+          cd resource/models/faster-whisper-small
+          curl -L -o config.json https://huggingface.co/Systran/faster-whisper-small/resolve/main/config.json
+          curl -L -o model.bin https://huggingface.co/Systran/faster-whisper-small/resolve/main/model.bin
+          curl -L -o vocabulary.txt https://huggingface.co/Systran/faster-whisper-small/resolve/main/vocabulary.txt
+          cd ../../..
 
       - name: Build Windows EXE
         run: |

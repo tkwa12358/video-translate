@@ -118,20 +118,59 @@ class MainWindow(FluentWindow):
 
     def check_model_on_startup(self):
         """启动时检查模型"""
-        model_name = "faster-whisper-large-v2"
-        model_path = MODEL_PATH / "faster-whisper" / model_name
+        # 1. 获取当前配置的模型
+        current_model_enum = cfg.faster_whisper_model.value
         
-        # 简单检查文件夹是否存在且不为空
-        if not model_path.exists() or not any(model_path.iterdir()):
+        # 2. 找到配置对应的目录名
+        from app.components.FasterWhisperSettingWidget import FASTER_WHISPER_MODELS
+        model_config = next(
+            (m for m in FASTER_WHISPER_MODELS if m["label"].lower() == current_model_enum.value.lower()),
+            None
+        )
+        
+        should_show_dialog = False
+        warning_msg = ""
+        
+        if model_config:
+            from app.core.utils.platform_utils import get_model_path
+            real_model_path = get_model_path(model_config["value"])
+            
+            # Check if valid
+            if not real_model_path.exists() or not any(real_model_path.iterdir()):
+                should_show_dialog = True
+                warning_msg = self.tr(f"当前配置的 {model_config['label']} 模型缺失，无法进行转录。请下载该模型。")
+        else:
+            # 理论上不应发生，除非配置错误
+            should_show_dialog = True
+            warning_msg = self.tr("配置的模型无效，请重新下载模型。")
+
+        # 3. 如果没问题，额外检查一下 Large-v2 (推荐模型) 是否存在，如果不存在且当前也不是 Large-v2，暂时不强制阻塞，但可以提示?
+        # 用户需求侧重于 "如果检测模型已被删了，要提示重新下载" -> 上面的逻辑已覆盖当前使用模型被删的情况。
+        # 这里仅在核心模型缺失时阻塞
+
+        if should_show_dialog:
              InfoBar.warning(
-                title=self.tr("缺少必要模型"),
-                content=self.tr("检测到缺少 High Quality (Large-v2) 转录模型，请立即下载，否则无法使用核心功能。"),
+                title=self.tr("模型缺失"),
+                content=warning_msg,
                 duration=5000,
                 position=InfoBarPosition.TOP,
                 parent=self,
             )
              dialog = FasterWhisperDownloadDialog(self)
              dialog.exec_()
+        elif "large-v2" not in current_model_enum.value.lower():
+             # 模型存在，但不是推荐的 Large-v2
+             w = MessageBox(
+                self.tr("建议使用 Large-v2 模型"),
+                self.tr("您当前使用的模型不是 High Quality (Large-v2)。\n\n为了获得最佳的转录精度和学习效果，我们强烈建议您下载并使用 Large-v2 模型 (约3GB)。\n\nSmall 模型仅适合快速测试，精度较低。"),
+                self
+            )
+             w.yesButton.setText(self.tr("去下载 Large-v2"))
+             w.cancelButton.setText(self.tr("继续使用当前模型"))
+             
+             if w.exec():
+                 dialog = FasterWhisperDownloadDialog(self)
+                 dialog.exec_()
 
     def onGithubDialog(self):
         """打开GitHub"""

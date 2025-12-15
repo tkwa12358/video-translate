@@ -261,6 +261,12 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         layout.addLayout(title_layout)
         layout.addSpacing(8)
 
+        # 添加模型选择建议说明
+        tip_label = BodyLabel(self.tr("💡 提示：Small 模型仅用于功能测试(速度快但精度低)；\n⭐ 推荐下载 Large-v2 以获得最佳学习体验(高精度)。"), self)
+        tip_label.setStyleSheet("color: #ffa000") # 使用橙色/金色提示
+        layout.addWidget(tip_label)
+        layout.addSpacing(8)
+
         # 模型表格
         self.model_table = self._create_model_table()
         self.installButton.clicked.connect(self._toggle_install)
@@ -516,6 +522,59 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
         self._set_all_download_buttons_enabled(False)
 
         model = FASTER_WHISPER_MODELS[row]
+        model_path = os.path.join(MODEL_PATH, model["value"])
+        model_bin_path = os.path.join(model_path, "model.bin")
+
+        # Check if detected model exists
+        if os.path.exists(model_bin_path):
+             w = MessageBox(
+                self.tr("模型已存在"),
+                self.tr(f"检测到 {model['label']} 模型文件已存在，是否重新下载？\n点击'取消'将直接使用现有模型。"),
+                self
+            )
+             w.yesButton.setText(self.tr("重新下载"))
+             w.cancelButton.setText(self.tr("使用现有模型"))
+             
+             if not w.exec():
+                 # User chose to use existing model
+                 FasterWhisperDownloadDialog.is_downloading = False
+                 self._set_all_download_buttons_enabled(True)
+                 
+                 # Force update status to downloaded
+                 status_item = QTableWidgetItem(self.tr("已下载"))
+                 status_item.setForeground(Qt.green)
+                 status_item.setTextAlignment(Qt.AlignCenter)
+                 self.model_table.setItem(row, 2, status_item)
+                 
+                 # Update button text
+                 button_container = self.model_table.cellWidget(row, 3)
+                 download_btn = button_container.findChild(HyperlinkButton)
+                 if download_btn:
+                     download_btn.setText(self.tr("重新下载"))
+                     download_btn.setEnabled(True)
+                     
+                 # Update config dropdown
+                 if self.setting_widget:
+                     current_value = cfg.faster_whisper_model.value
+                     combo = self.setting_widget.model_card.comboBox
+                     combo.clear()
+                     
+                     available = []
+                     model_map = {m["label"].lower(): m["value"] for m in FASTER_WHISPER_MODELS}
+                     for enum_val in FasterWhisperModelEnum:
+                         if enum_val.value in model_map:
+                             if (MODEL_PATH / model_map[enum_val.value]).exists():
+                                 available.append(enum_val)
+                                 
+                     self.setting_widget.model_card.optionToText = {e: e.value for e in available}
+                     for enum_val in available:
+                         combo.addItem(enum_val.value, userData=enum_val)
+                         
+                     if current_value in available:
+                         combo.setCurrentText(current_value.value)
+                 
+                 return
+
         self.progress_bar.show()
         self.progress_label.show()
         self.progress_label.setText(self.tr(f"正在下载 {model['label']} 模型..."))
@@ -528,7 +587,7 @@ class FasterWhisperDownloadDialog(MessageBoxBase):
 
         # 创建并启动下载线程，保存到类属性
         self.model_download_thread = ModelscopeDownloadThread(
-            model["modelScopeLink"], os.path.join(MODEL_PATH, model["value"])
+            model["modelScopeLink"], model_path
         )
 
         def _on_model_download_progress(value, msg):
@@ -904,10 +963,14 @@ class FasterWhisperSettingWidget(QWidget):
             self.show_error_info(self.tr("模型配置不存在"))
             return False
 
-        model_path = MODEL_PATH / model_config["value"]
-        model_files = model_path / "model.bin"
+        from app.core.utils.platform_utils import get_model_path
+        real_model_path = get_model_path(model_config["value"])
+        
         # 检查模型文件是否存在
-        if not model_path.exists() and not model_files.exists():
+        # model files check usually looks for model.bin inside the folder
+        model_bin = real_model_path / "model.bin"
+        
+        if not real_model_path.exists() or not model_bin.exists():
             self.show_error_info(self.tr("模型文件不存在: ") + model_value)
             return False
         return True

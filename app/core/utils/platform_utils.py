@@ -3,9 +3,31 @@
 """
 
 import os
+from app.config import APPDATA_PATH, RESOURCE_PATH, MODEL_PATH
 import platform
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Path # Added Path to typing import
+
+def get_model_path(model_name: str) -> Path:
+    """
+    Get the valid path for a model, checking AppData first, then Bundled Resources.
+    Returns:
+        Path: The existing model path. If not found, returns the standard AppData path (even if it doesn't exist yet).
+    """
+    # 1. Check AppData (User downloaded)
+    # Correction: MODEL_PATH in config.py is APPDATA_PATH/models.
+    # The folders are usually just the model value e.g. "faster-whisper-small"
+    
+    appdata_model = MODEL_PATH / model_name
+    if appdata_model.exists() and any(appdata_model.iterdir()):
+        return appdata_model
+        
+    # 2. Check Bundled Resource
+    bundled_model = RESOURCE_PATH / "models" / model_name
+    if bundled_model.exists() and any(bundled_model.iterdir()):
+        return bundled_model
+        
+    return appdata_model
 
 if TYPE_CHECKING:
     from app.core.entities import TranscribeModelEnum
